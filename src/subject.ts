@@ -4,6 +4,7 @@ import {
   Observable,
   ReplaySubject,
   Subject,
+  Subscription,
 } from 'rxjs';
 
 /**
@@ -49,11 +50,46 @@ replaySubject.subscribe((vl) => console.log(`2nd: ${vl}`));
 
 // 🟢 Async Subject
 const asyncSubject = new AsyncSubject();
-asyncSubject.subscribe((vl) => console.log(`🔴 Async: ${vl}`));
+asyncSubject.subscribe((vl) => console.log(`Async: ${vl}`));
 
 asyncSubject.next(7);
 asyncSubject.next(8);
 asyncSubject.next(9);
 
-// It completes in 3 second and emits the last value.
-setTimeout(() => asyncSubject.complete(), 3000);
+// Emits its last value on completion.
+asyncSubject.complete();
+
+// 🟢 Promise vs Observables
+// ⏳ Promise is always asynchronous, even if it resolves instantly:
+const greetingPromise = new Promise((resolve, reject) => {
+  // This callback called immediately
+  console.log('Callback call');
+  resolve('A-a-and resolved!');
+});
+
+console.log('Before calling then...');
+
+greetingPromise.then((res) => console.log(` Greeting from Promise: ${res}`));
+
+// 🚀 On the other hand, the Observable can be synchronous:
+const greetingObservable$ = new Observable((observer) => {
+  // This callback called only on subscription
+  console.log('Callback call');
+  observer.next('Next!');
+  observer.complete();
+});
+
+console.log('Before calling subscribe...');
+
+let lastSub = greetingObservable$.subscribe({
+  next: console.log,
+  complete: () => console.log('🔴 Complete the Observable'),
+});
+console.log('After calling subscribe…');
+
+// Memory and subscriptions
+// It can add and collect all subscriptions and then unsubscribe
+// from all of them at some point.
+let subscriptions: Subscription = new Subscription();
+subscriptions.add(lastSub);
+subscriptions.unsubscribe();
